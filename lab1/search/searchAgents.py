@@ -267,19 +267,12 @@ def euclideanHeuristic(position, problem, info={}):
 #####################################################
 
 class CornersProblem(search.SearchProblem):
-    """
-    This search problem finds paths through all four corners of a layout.
-    """
-    
     def __init__(self, startingGameState):
-        """
-        Stores the walls, Pacman's starting position, and the corners.
-        """
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
         top, right = self.walls.height - 2, self.walls.width - 2
         self.corners = ((1, 1), (1, top), (right, 1), (right, top))
-        self._expanded = 0  # DO NOT CHANGE
+        self._expanded = 0  
 
     def getStartState(self):
         """
@@ -340,21 +333,56 @@ class CornersProblem(search.SearchProblem):
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
-
-      state:   The current search state
-               (a data structure you chose in your search problem)
-
-      problem: The CornersProblem instance for this layout.
-
-    This function should always return a number that is a lower bound on the
-    shortest path from the state to a goal of the problem; i.e.  it should be
-    admissible (as well as consistent).
+    
+    The heuristic estimates the cost to visit all unvisited corners
+    by computing the Manhattan distance from the current position to
+    the nearest unvisited corner and then adding the Manhattan distances
+    between the unvisited corners.
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    corners = problem.corners  # The corner coordinates
+    walls = problem.walls  # The walls of the maze
+    current_position, visited_corners = state
+    
+    # List of unvisited corners
+    unvisited_corners = []
+    for i in range(4):
+        if not visited_corners[i]:
+            unvisited_corners.append(corners[i])
+    
+    # If all corners are visited, the heuristic value is 0 (goal state)
+    if not unvisited_corners:
+        return 0
+    
+    # Step 1: Find the Manhattan distance to the closest unvisited corner
+    heuristic_cost = 0
+    distances = [util.manhattanDistance(current_position, corner) for corner in unvisited_corners]
+    
+    # Start by going to the nearest corner
+    min_distance_to_corner = min(distances)
+    
+    # Step 2: Estimate the cost of visiting all remaining unvisited corners
+    # After visiting the first corner, sum the minimum distances between the corners
+    unvisited_cost = 0
+    remaining_corners = unvisited_corners[:]
+    
+    # Choose the first corner to visit
+    current_corner = remaining_corners.pop(distances.index(min_distance_to_corner))
+    
+    # While there are unvisited corners, sum the distance between them
+    while remaining_corners:
+        # Find the nearest corner from the current one
+        corner_distances = [util.manhattanDistance(current_corner, corner) for corner in remaining_corners]
+        min_corner_distance = min(corner_distances)
+        
+        # Update the current corner and remove it from remaining corners
+        current_corner = remaining_corners.pop(corner_distances.index(min_corner_distance))
+        unvisited_cost += min_corner_distance
+    
+    # The total heuristic is the sum of reaching the first unvisited corner
+    # and then visiting all remaining corners
+    heuristic_cost = min_distance_to_corner + unvisited_cost
+    
+    return heuristic_cost
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
