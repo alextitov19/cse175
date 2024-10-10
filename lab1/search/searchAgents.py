@@ -494,35 +494,35 @@ class AStarFoodSearchAgent(SearchAgent):
 
 def foodHeuristic(state, problem):
     """
-    Your heuristic for the FoodSearchProblem goes here.
-
-    This heuristic must be consistent to ensure correctness.  First, try to come
-    up with an admissible heuristic; almost all admissible heuristics will be
-    consistent as well.
-
-    If using A* ever finds a solution that is worse uniform cost search finds,
-    your heuristic is *not* consistent, and probably not admissible!  On the
-    other hand, inadmissible or inconsistent heuristics may find optimal
-    solutions, so be careful.
-
-    The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a Grid
-    (see game.py) of either True or False. You can call foodGrid.asList() to get
-    a list of food coordinates instead.
-
-    If you want access to info like walls, capsules, etc., you can query the
-    problem.  For example, problem.walls gives you a Grid of where the walls
-    are.
-
-    If you want to *store* information to be reused in other calls to the
-    heuristic, there is a dictionary called problem.heuristicInfo that you can
-    use. For example, if you only want to count the walls once and store that
-    value, try: problem.heuristicInfo['wallCount'] = problem.walls.count()
-    Subsequent calls to this heuristic can access
-    problem.heuristicInfo['wallCount']
+    A more effective heuristic for the FoodSearchProblem using the sum of distances
+    between Pacman and all food items, as well as the distances between food items.
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    foodList = foodGrid.asList()  # List of food positions
+    
+    # If no food left, return 0 as we're at the goal
+    if not foodList:
+        return 0
+    
+    # Find the distance from Pacman to the closest food item
+    distances_to_food = [util.manhattanDistance(position, food) for food in foodList]
+    closest_food_dist = min(distances_to_food)
+    
+    # Now calculate distances between all food items (food-to-food distances)
+    food_pair_distances = []
+    for i in range(len(foodList)):
+        for j in range(i + 1, len(foodList)):
+            food_pair_distances.append(util.manhattanDistance(foodList[i], foodList[j]))
+    
+    # If no food pairs, we return the distance to the closest food
+    if not food_pair_distances:
+        return closest_food_dist
+    
+    # Get the maximum food-to-food distance (this gives an idea of how far apart they are)
+    max_food_pair_dist = max(food_pair_distances)
+    
+    # Heuristic: sum of closest food distance and the max distance between food items
+    return closest_food_dist + max_food_pair_dist
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
